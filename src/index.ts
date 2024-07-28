@@ -6,6 +6,7 @@ import bodyParser from "body-parser";
 import authRouter from"./routes/authroutes"
 import adminroutes from "./routes/adminroutes"
 import profileroutes from "./routes/profileroute";
+import postroutes from "./routes/postroutes";
 
 dotenv.config();
 console.log("DB_URL:", process.env.DB_URL);
@@ -30,6 +31,7 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/auth", adminroutes);
 app.use("/api/auth", profileroutes);
+app.use("/api/auth", postroutes);
 
 
 
