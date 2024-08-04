@@ -4,6 +4,7 @@ import formidable, { File } from "formidable";
 import cloudinary from "cloudinary";
 import dotenv from "dotenv";
 import PostModel, { PostDocument } from "../models/postModel";
+import { UserModel } from "../models/userModel";
 
 dotenv.config();
 
@@ -22,7 +23,7 @@ interface ExtendedRequest extends Request {
 }
 
 export const createPost = async (
-  req: Request,
+  req: ExtendedRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -31,12 +32,25 @@ export const createPost = async (
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
-
     const decoded = jwt.decode(token) as DecodedToken;
     req.body.userId = decoded.id;
-    const image = (req as ExtendedRequest).files.img;
-    const imageUrl = await cloudinary.v2.uploader.upload(image.filepath);
-    req.body.img = imageUrl.secure_url;
+    const user = await UserModel.findById(decoded.id);
+
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    req.body.username = user.username;
+    req.body.userProfilePicture = user.profilePicture;
+
+    const images = req.files;
+    console.log(images);
+
+    if (images) {
+      const imageUrls = await Promise.all((images.img as File[]).map((image: File) => cloudinary.v2.uploader.upload(image.filepath)));
+      req.body.img = imageUrls.map((imageUrl) => imageUrl.secure_url);
+    }
+
     const newPost = new PostModel(req.body);
     const savedPost = await newPost.save();
     res.status(200).json(savedPost);
@@ -53,7 +67,7 @@ export const getUserPosts = async (
   try {
     const posts: PostDocument[] = await PostModel.find({
       userId: req.params.userId,
-    });
+    });   
     res.status(200).json(posts);
   } catch (err) {
     console.error(err);

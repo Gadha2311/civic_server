@@ -7,6 +7,9 @@ interface IUser extends Document{
     bio:string;
     profilePicture?: string;
     blocked?: boolean;
+    following?:string [];
+    followers?:string [];
+    blockedUsers?: string[];
     isAdmin?: boolean;
     isVerified?: boolean;
     isPrivate?:boolean;
@@ -14,6 +17,7 @@ interface IUser extends Document{
     verificationTokenExpires?: Date;
     resetPasswordToken?:string,
     resetPasswordExpires?: Date
+    blockedMe?:string[]
 
 }
 
@@ -44,6 +48,22 @@ const userSchema=new Schema<IUser>({
       blocked: {
         type: Boolean,
         default: false,
+      },
+      following:{
+        type: [String],
+        default:[]
+      },
+      followers:{
+        type: [String],
+        default:[]
+      },
+      blockedUsers: {
+        type: [String],
+        default: [], 
+      },
+      blockedMe:{
+        type:[String],
+        default:[],
       },
       isAdmin: {
         type: Boolean,

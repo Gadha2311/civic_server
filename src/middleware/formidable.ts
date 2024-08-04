@@ -12,7 +12,6 @@ export const fileparser = async (req: Request, res: Response, next: NextFunction
     if (err) {
       return next(err);
     }
-
     if (!req.body) req.body = {};
 
     for (let key in fields) {
@@ -24,10 +23,11 @@ export const fileparser = async (req: Request, res: Response, next: NextFunction
     for (let key in files) {
       const value = files[key];
       if (value) {
-        (req as ExtendedRequest).files[key] = Array.isArray(value) ? value[0] : value;
+        (req as ExtendedRequest).files[key] = value; 
       }
     }
 
     next();
   });
 };
+

@@ -7,14 +7,16 @@ import{
 } from "../controller/postController"
 
 import { fileparser } from "../middleware/formidable";
+import { getTimelinePost } from "../controller/authController";
 const router = Router();
 
 router.post("/createPost", fileparser, createPost);
 
-router.get("/user/:userId", getUserPosts);
+router.get("/posts/:userId", getUserPosts);
 
-router.put("/edit/:postId", editPost);
+router.put("/editpost/:postId", editPost);
 
-router.delete("/delete/:postId", deletePost);
+router.delete("/deletepost/:postId", deletePost);
+router.get("/getTimelinePost/:userId",getTimelinePost)
 
 export default router;

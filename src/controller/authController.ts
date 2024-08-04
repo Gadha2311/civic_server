@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 import { sendEmailtoUser } from "../utils/sendmail";
 import { sendForgotPasswordEmail } from "../utils/forgotmail";
 import { profile } from "console";
+import PostModel from "../models/postModel";
 
 ////////////////////Signup////////////////////////////
 export const signup = [
@@ -149,8 +150,11 @@ export const login = async (
         username: user.username,
         email: user.email,
         bio:user.bio,
+        following:user.following,
+        followers:user.followers,
         profilePicture:user.profilePicture,
         isPrivate:user.isPrivate
+
       },
     });
   } catch (error) {
@@ -280,5 +284,51 @@ export const adminlogin = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+
+
+export const getTimelinePost = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.headers['authorization']?.split(" ")[1];
+    if (!token) {
+      return next(new createError.Unauthorized('No token provided'));
+    }
+
+    const decoded = jwt.decode(token) as { id: string };
+    const userId = decoded.id;
+    const currentUser = await UserModel.findById(userId);
+
+    if (!currentUser) {
+      return next(new createError.NotFound('User not found'));
+    }
+
+    const following = currentUser.following ?? [];
+    const userPosts = await PostModel.find({ userId: currentUser._id });
+    const friendPosts = await Promise.all(
+      following.map(async (friendId: string) => {
+        return await PostModel.find({ userId: friendId });
+      })
+    );
+
+    const posts = userPosts.concat(...friendPosts);
+    const detailedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const author = await UserModel.findById(post.userId);
+        return {
+          ...post.toObject(),
+          authorName: author?.username,
+          authorProfilePicture: author?.profilePicture,
+        };
+      })
+    );
+
+    detailedPosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    res.status(200).json(detailedPosts);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: 'Server Error' });
   }
 };
