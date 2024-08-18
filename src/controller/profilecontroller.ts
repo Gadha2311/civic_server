@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { UserModel } from "../models/userModel";
 import formidable from "formidable";
 import fs from "fs";
+import { CustomRequest } from "../middleware/jwtAuth";
 
 interface ExtendedRequest extends Request {
   files?: {
@@ -33,12 +34,12 @@ export const uploadProfilePicture = async (
   res: Response
 ) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const token = req.headers.authorization;
     if (!token) {
       return res.status(401).json({ message: "No token provided" });
     }
 
-    const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
+    const User = jwt.verify(token, "secretkey123") as DecodedToken;
 
     const image = req.files?.img;
     if (!image || !Array.isArray(image) || image.length === 0) {
@@ -52,7 +53,7 @@ export const uploadProfilePicture = async (
     fs.unlinkSync(filePath);
 
     const updatedUser = await UserModel.findByIdAndUpdate(
-      decoded.id,
+      User.id,
       { profilePicture: imageUrl.secure_url },
       { new: true }
     );
@@ -70,14 +71,20 @@ export const uploadProfilePicture = async (
 
 ////////////////////////////////////////////updateProfileDetails/////////////////////////////////////////////////////
 
-export const updateProfileDetails = async (req: Request, res: Response) => {
+export const updateProfileDetails = async (
+  req: CustomRequest,
+  res: Response
+) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ message: "No token provided" });
-    }
+    // const token = req.headers.authorization?.split(" ")[1];
+    // console.log(token);
 
-    const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
+    // if (!token) {
+    //   return res.status(401).json({ message: "No token provided" });
+    // }
+
+    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
+    const userId = req.currentUser?.id;
 
     const { name, bio } = req.body;
     if (!name || !bio) {
@@ -88,7 +95,7 @@ export const updateProfileDetails = async (req: Request, res: Response) => {
     const username = name;
 
     const updatedUser = await UserModel.findByIdAndUpdate(
-      decoded.id,
+      userId,
       { username, bio },
       { new: true }
     );
@@ -106,19 +113,20 @@ export const updateProfileDetails = async (req: Request, res: Response) => {
 
 ////////////////////////////////////////////status (Private/public)/////////////////////////////////////////////////////
 
-export const status = async (req: Request, res: Response) => {
+export const status = async (req: CustomRequest, res: Response) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ message: "No token provided" });
-    }
+    // const token = req.headers.authorization;
+    // if (!token) {
+    //   return res.status(401).json({ message: "No token provided" });
+    // }
 
-    const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
+    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
+    const userId = req.currentUser?.id;
 
     const { isPrivate } = req.body;
 
     const updatedUser = await UserModel.findByIdAndUpdate(
-      decoded.id,
+      userId,
       { isPrivate },
       { new: true }
     );
@@ -156,7 +164,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const user = await UserModel.findById(userId).select(
-      "username email profilePicture isPrivate bio followers following"
+      "username email profilePicture isPrivate bio followers following blockedMe"
     );
 
     if (!user) {
@@ -173,26 +181,26 @@ export const getUserProfile = async (req: Request, res: Response) => {
 ////////////////////////////////////////////followUser/////////////////////////////////////////////////////
 
 export const followUser = async (
-  req: Request,
+  req: CustomRequest,
   res: Response
 ): Promise<void> => {
   const id: string = req.params.id;
-  const token = req.headers.authorization?.split(" ")[1];
+  // const token = req.headers.authorization?.split(" ")[1];
 
-  if (!token) {
-    res.status(401).json("Token not provided");
-    return;
-  }
+  // if (!token) {
+  //   res.status(401).json("Token not provided");
+  //   return;
+  // }
 
-  let currentUserId: string;
+  let currentUserId: any = req.currentUser?.id;
 
-  try {
-    const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
-    currentUserId = decoded.id;
-  } catch (err) {
-    res.status(400).json("Invalid token");
-    return;
-  }
+  // try {
+  //   const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
+  //   currentUserId = decoded.id;
+  // } catch (err) {
+  //   res.status(400).json("Invalid token");
+  //   return;
+  // }
 
   if (currentUserId === id) {
     res.status(403).json("Request forbidden");
@@ -226,20 +234,19 @@ export const followUser = async (
 ////////////////////////////////////////////unfollowUser/////////////////////////////////////////////////////
 
 export const unfollowUser = async (
-  req: Request,
+  req: CustomRequest,
   res: Response
 ): Promise<void> => {
-  const token = req.headers.authorization?.split(" ")[1];
+  // const token = req.headers.authorization?.split(" ")[1];
+
+  // if (!token) {
+  //   res.status(401).json("Token not provided");
+  //   return;
+  // }
   const { id: userId } = req.params;
-
-  if (!token) {
-    res.status(401).json("Token not provided");
-    return;
-  }
-
   try {
-    const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
-    const currentUserId = decoded.id;
+    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
+    const currentUserId: any = req.currentUser?.id;
 
     if (currentUserId === userId) {
       res.status(403).json("You can't unfollow yourself");
@@ -329,16 +336,16 @@ export const getFollowers = async (req: Request, res: Response) => {
 
 ////////////////////////////////////////////blockUser/////////////////////////////////////////////////////
 
-export const blockUser = async (req: Request, res: Response) => {
+export const blockUser = async (req: CustomRequest, res: Response) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ message: "No token provided" });
-    }
+    // const token = req.headers.authorization?.split(" ")[1];
+    // if (!token) {
+    //   return res.status(401).json({ message: "No token provided" });
+    // }
 
-    const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
-    const currentUserId = decoded.id;
+    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
     const { userId } = req.params;
+    const currentUserId: any = req.currentUser?.id;
 
     if (currentUserId === userId) {
       return res.status(403).json({ message: "You cannot block yourself" });
@@ -368,32 +375,40 @@ export const blockUser = async (req: Request, res: Response) => {
 
 // ////////////////////////////////////////////unblockUser/////////////////////////////////////////////////////
 
-// export const unblockUser = async (req: Request, res: Response) => {
-//   try {
-//     const token = req.headers.authorization?.split(" ")[1];
-//     if (!token) {
-//       return res.status(401).json({ message: "No token provided" });
-//     }
+export const unblockUser = async (req: CustomRequest, res: Response) => {
+  try {
+    // const token = req.headers.authorization?.split(" ")[1];
+    // if (!token) {
+    //   return res.status(401).json({ message: "No token provided" });
+    // }
 
-//     const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
-//     const currentUserId = decoded.id;
-//     const { userId } = req.params;
+    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
+    const currentUserId:any = req.currentUser?.id;
+    const { userId } = req.params;
+    if (currentUserId === userId) {
+      return res.status(403).json({ message: "You cannot unblock yourself" });
+    }
 
-//     if (currentUserId === userId) {
-//       return res.status(403).json({ message: "You cannot unblock yourself" });
-//     }
+    const currentUser = await UserModel.findById(currentUserId);
+    const userToUnblock = await UserModel.findById(userId);
 
-//     const userToUnblock = await UserModel.findById(userId);
-//     if (!userToUnblock) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
+    if (!currentUser || !userToUnblock) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-//     userToUnblock.blocked = false;
-//     await userToUnblock.save();
+    currentUser.blockedUsers = currentUser.blockedUsers?.filter(
+      (id) => id !== userId
+    );
+    userToUnblock.blockedMe = userToUnblock.blockedMe?.filter(
+      (id) => id !== currentUserId
+    );
 
-//     res.status(200).json({ message: "User unblocked successfully" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server Error", error: err });
-//   }
-// };
+    await currentUser.save();
+    await userToUnblock.save();
+
+    res.status(200).json({ message: "User unblocked successfully" });
+  } catch (err) {
+    console.error("Error unblocking user:", err);
+    res.status(500).json({ message: "Server Error", error: err });
+  }
+};

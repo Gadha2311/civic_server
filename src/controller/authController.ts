@@ -9,6 +9,7 @@ import { sendEmailtoUser } from "../utils/sendmail";
 import { sendForgotPasswordEmail } from "../utils/forgotmail";
 import { profile } from "console";
 import PostModel from "../models/postModel";
+import { CustomRequest } from "../middleware/jwtAuth";
 
 ////////////////////Signup////////////////////////////
 export const signup = [
@@ -289,15 +290,15 @@ export const adminlogin = async (
 
 
 
-export const getTimelinePost = async (req: Request, res: Response, next: NextFunction) => {
+export const getTimelinePost = async (req: CustomRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers['authorization']?.split(" ")[1];
-    if (!token) {
-      return next(new createError.Unauthorized('No token provided'));
-    }
+    // const token = req.headers['authorization'];
+    // if (!token) {
+    //   return next(new createError.Unauthorized('No token provided'));
+    // }
 
-    const decoded = jwt.decode(token) as { id: string };
-    const userId = decoded.id;
+    // const decoded = jwt.decode(token) as { id: string };
+    const userId = req.currentUser?.id;
     const currentUser = await UserModel.findById(userId);
 
     if (!currentUser) {
@@ -305,10 +306,10 @@ export const getTimelinePost = async (req: Request, res: Response, next: NextFun
     }
 
     const following = currentUser.following ?? [];
-    const userPosts = await PostModel.find({ userId: currentUser._id });
+    const userPosts = await PostModel.find({ userId: currentUser._id , blocked:false});
     const friendPosts = await Promise.all(
       following.map(async (friendId: string) => {
-        return await PostModel.find({ userId: friendId });
+        return await PostModel.find({ userId: friendId, blocked:false});
       })
     );
 

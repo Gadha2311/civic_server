@@ -8,6 +8,8 @@ import adminroutes from "./routes/adminroutes"
 import profileroutes from "./routes/profileroute";
 import postroutes from "./routes/postroutes";
 
+
+
 dotenv.config();
 console.log("DB_URL:", process.env.DB_URL);
 console.log("PORT:", process.env.PORT);
@@ -32,8 +34,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/auth", adminroutes);
 app.use("/api/auth", profileroutes);
 app.use("/api/auth", postroutes);
-
-
+// app.use("/api/auth",notificationroutes)
 
 
 const DB_URL = process.env.DB_URL as string;
