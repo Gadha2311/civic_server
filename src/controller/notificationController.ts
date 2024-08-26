@@ -1,42 +1,115 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import Notification from "../models/notificationModel";
+import { CustomRequest } from "../middleware/jwtAuth";
+import { UserModel } from "../models/userModel";
 
 interface DecodedToken {
   id: string;
 }
 
-export const getNotifications = async (req: Request, res: Response): Promise<void> => {
+export const getNotifications = async (req: CustomRequest, res: Response) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
-
-    const secret = process.env.JWT_KEY;
-    if (!secret) {
-      console.error("JWT_KEY is not defined");
-      res.status(500).json({ message: "Internal server error" });
-      return;
-    }
-
-    // Log token and secret for debugging
-    console.log("Token:", token);
-    console.log("Secret:", secret);
-
-    // Verify and decode the token
-    const decoded = jwt.verify(token, secret) as DecodedToken;
-    console.log("Decoded:", decoded); // Add this line
-
-    // Extract user ID from the decoded token
-    const userId = decoded.id;
-
-    // Fetch notifications for the user
-    const notifications = await Notification.find({ userId }).sort({ createdAt: -1 });
+    const userId = req.currentUser?.id;
+    
+    const notifications = await Notification.find({ userId }).sort({
+      createdAt: -1,
+    });
     res.status(200).json(notifications);
-  } catch (err) {
-    console.error("Error fetching notifications:", err);
-    res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+export const approveFollowRequest = async (
+  req: CustomRequest,
+  res: Response
+) => {
+  try {
+    const { notificationId } = req.params;
+    const userId = req.currentUser?.id;
+
+    const notification = await Notification.findById(notificationId);
+    if (
+      !notification ||
+      notification.userId.toString() !== userId ||
+      notification.type !== "follow"
+    ) {
+      return res.status(404).json("Follow request not found");
+    }
+
+    const followingUserId = notification.content.split(" ")[0];
+    const followingUser = await UserModel.findOne({
+      username: followingUserId,
+    });
+
+    if (!followingUser) {
+      await notification.deleteOne();
+      return res.status(404).json("Following user not found");
+    }
+
+ 
+    const currentUser:any = await UserModel.findById(userId);
+    if (!currentUser.requests.includes(followingUser._id)) {
+      await notification.deleteOne();
+      return res.status(200).json("User deleted the follow request");
+    }
+
+    await UserModel.findByIdAndUpdate(userId, {
+      $addToSet: { followers: followingUser._id },
+    });
+    await UserModel.findByIdAndUpdate(followingUser._id, {
+      $addToSet: { following: userId },
+    });
+
+    await notification.deleteOne();
+
+    res.status(200).json("Follow request approved");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+export const declineFollowRequest = async (
+  req: CustomRequest,
+  res: Response
+) => {
+  try {
+    const { notificationId } = req.params;
+    const userId = req.currentUser?.id;
+
+  
+    const notification = await Notification.findById(notificationId);
+    if (
+      !notification ||
+      notification.userId.toString() !== userId ||
+      notification.type !== "follow"
+    ) {
+      return res.status(404).json("Follow request not found");
+    }
+
+   
+    const followingUsername = notification.content.split(" ")[0];
+    const followingUser = await UserModel.findOne({
+      username: followingUsername,
+    });
+
+    if (!followingUser) {
+      return res.status(404).json("Following user not found");
+    }
+
+    await UserModel.findByIdAndUpdate(userId, {
+      $pull: { requests: followingUser._id },
+    });
+
+    
+    await notification.deleteOne();
+
+    res.status(200).json("Follow request declined");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };

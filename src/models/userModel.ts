@@ -40,6 +40,10 @@ const userSchema = new Schema<IUser>(
       type: [String],
       default: [],
     },
+    requests: {
+      type: [String],
+      default: [],
+    },
     blockedUsers: {
       type: [String],
       default: [],

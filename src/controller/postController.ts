@@ -8,6 +8,7 @@ import { UserModel } from "../models/userModel";
 import Report, { IReport } from "../models/reportModel";
 import Notification from "../models/notificationModel";
 import { CustomRequest } from "../middleware/jwtAuth";
+import { Server as SocketIOServer } from "socket.io";
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ interface DecodedToken {
 
 interface ExtendedRequest extends Request {
   files?: any;
+  io?: SocketIOServer;
 }
 
 export const createPost = async (
@@ -123,12 +125,7 @@ export const editPost = async (req: ExtendedRequest, res: Response) => {
 
 export const deletePost = async (req: CustomRequest, res: Response) => {
   try {
-    // const token = req.headers.authorization?.split(" ")[1];
-    // if (!token) {
-    //   return res.status(401).json({ message: "Unauthorized" });
-    // }
-
-    // const decoded = jwt.decode(token) as DecodedToken;
+   
     const postId = req.params.postId;
     const currentUserId = req.currentUser?.id;
 
@@ -157,11 +154,7 @@ export const createReport = async (
   res: Response
 ): Promise<void> => {
   try {
-    // const token = req.headers.authorization?.split(" ")[1];
-    // if (!token) {
-    //   res.status(401).json({ message: "Unauthorized" });
-    //   return;
-    // }
+    
     const decoded = req.currentUser?.id;
 
     const user = await UserModel.findById(decoded);
@@ -191,20 +184,17 @@ export const createReport = async (
   }
 };
 
-export const likePost = async (
+export const likePost = (io: SocketIOServer) => async (
   req: CustomRequest,
-  res: Response
+  res: Response,
+
 ): Promise<void> => {
   try {
-    // const token = req.headers.authorization;
-    // if (!token) {
-    //   res.status(401).json({ message: "Unauthorized" });
-    //   return;
-    // }
-    // const decoded = jwt.decode(token) as DecodedToken;
     const postId = req.params.postId;
 
     const post = await PostModel.findById(postId);
+    console.log(`post: ${post}`);
+    
     if (!post) {
       res.status(404).json({ message: "Post not found" });
       return;
@@ -214,11 +204,13 @@ export const likePost = async (
 
     if (alreadyLiked) {
       post.likes = post.likes.filter((id) => id !== userId);
+      res.status(200).json(post);
     } else {
       post.likes.push(userId);
-
+      const firstImage = Array.isArray(post.img) && post.img.length > 0 ? post.img[0] : undefined;
       const notification = new Notification({
         userId: post.userId,
+        postImage:firstImage,
         type: "like",
         content: `${
           (await UserModel.findById(userId))?.username
@@ -227,9 +219,11 @@ export const likePost = async (
         createdAt: new Date(),
       });
       await notification.save();
+      res.status(200).json({notification});
+   
     }
     await post.save();
-    res.status(200).json(post);
+    
   } catch (err) {
     console.error(err);
     res.status(500).json(err);
@@ -241,12 +235,6 @@ export const addComment = async (
   res: Response
 ): Promise<void> => {
   try {
-    // const token = req.headers.authorization;
-    // if (!token) {
-    //   res.status(401).json({ message: "Unauthorized" });
-    //   return;
-    // }
-    // const decoded = jwt.decode(token) as DecodedToken;
     const userId = req.currentUser?.id;
 
     const user = await UserModel.findById(userId);
@@ -271,8 +259,6 @@ export const addComment = async (
 
     post.comments = [...(post.comments || []), newComment];
     await post.save();
-
-    // Create a notification for the post author
     const notification = new Notification({
       userId: post.userId,
       type: "comment",
@@ -282,20 +268,16 @@ export const addComment = async (
     });
     await notification.save();
 
-    res.status(200).json(post);
+    res.status(200).json({post,notification});
   } catch (err) {
     console.error("Error adding comment:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Delete image
+
 export const deleteImage = async (req: CustomRequest, res: Response) => {
   try {
-    // const token = req.headers.authorization;
-    // if (!token) {
-    //   return res.status(401).json({ message: "Unauthorized" });
-    // }
 
     const currentUserId = req.currentUser?.id;
     const postId = req.params.postId;

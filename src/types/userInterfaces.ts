@@ -2,6 +2,7 @@
 import { Document } from "mongoose";
 
 export interface IUser extends Document {
+  _id: string
   username: string;
   email: string;
   password: string;
@@ -10,6 +11,7 @@ export interface IUser extends Document {
   blocked?: boolean;
   following?: string[];
   followers?: string[];
+  requests?:string[];
   blockedUsers?: string[];
   isAdmin?: boolean;
   isVerified?: boolean;

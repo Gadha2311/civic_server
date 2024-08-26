@@ -100,11 +100,6 @@ export const verifyEmail = async (
     user.verificationToken = undefined;
     user.verificationTokenExpires = undefined;
     await user.save();
-
-    // res.status(200).json({
-    //   status: "success",
-    //   message: "Email verified successfully!",
-    // });
     res.redirect("http://localhost:5173/login?verified=true");
   } catch (error) {
     next(error);
@@ -292,12 +287,6 @@ export const adminlogin = async (
 
 export const getTimelinePost = async (req: CustomRequest, res: Response, next: NextFunction) => {
   try {
-    // const token = req.headers['authorization'];
-    // if (!token) {
-    //   return next(new createError.Unauthorized('No token provided'));
-    // }
-
-    // const decoded = jwt.decode(token) as { id: string };
     const userId = req.currentUser?.id;
     const currentUser = await UserModel.findById(userId);
 

@@ -6,11 +6,15 @@ import { UserModel } from "../models/userModel";
 import formidable from "formidable";
 import fs from "fs";
 import { CustomRequest } from "../middleware/jwtAuth";
+import Notification from "../models/notificationModel";
+import { Server as SocketIOServer } from "socket.io";
+import PostModel,{PostDocument} from "../models/postModel";
 
 interface ExtendedRequest extends Request {
   files?: {
     img: formidable.File;
   };
+  io?: SocketIOServer;
 }
 
 dotenv.config();
@@ -76,14 +80,7 @@ export const updateProfileDetails = async (
   res: Response
 ) => {
   try {
-    // const token = req.headers.authorization?.split(" ")[1];
-    // console.log(token);
-
-    // if (!token) {
-    //   return res.status(401).json({ message: "No token provided" });
-    // }
-
-    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
+  
     const userId = req.currentUser?.id;
 
     const { name, bio } = req.body;
@@ -115,12 +112,6 @@ export const updateProfileDetails = async (
 
 export const status = async (req: CustomRequest, res: Response) => {
   try {
-    // const token = req.headers.authorization;
-    // if (!token) {
-    //   return res.status(401).json({ message: "No token provided" });
-    // }
-
-    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
     const userId = req.currentUser?.id;
 
     const { isPrivate } = req.body;
@@ -160,9 +151,11 @@ export const search = async (req: Request, res: Response) => {
 
 ////////////////////////////////////////////getUserProfile/////////////////////////////////////////////////////
 
-export const getUserProfile = async (req: Request, res: Response) => {
+export const getUserProfile = async (req: CustomRequest, res: Response) => {
   try {
     const { userId } = req.params;
+    const currentUserId:any = req.currentUser?.id;
+
     const user = await UserModel.findById(userId).select(
       "username email profilePicture isPrivate bio followers following blockedMe"
     );
@@ -170,8 +163,20 @@ export const getUserProfile = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    console.log(user.followers);
+    
+   
+    let posts:PostDocument[] = [];
+    if (
+      !user.isPrivate ||
+      (user.isPrivate &&  user.followers?.includes(currentUserId))
+    ) {
+      posts = await PostModel.find({ userId:userId, blocked:false}).exec()
+      console.log(posts);
+      
+    }
 
-    res.status(200).json(user);
+    res.status(200).json({ user, posts });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -180,56 +185,50 @@ export const getUserProfile = async (req: Request, res: Response) => {
 
 ////////////////////////////////////////////followUser/////////////////////////////////////////////////////
 
-export const followUser = async (
-  req: CustomRequest,
-  res: Response
-): Promise<void> => {
-  const id: string = req.params.id;
-  // const token = req.headers.authorization?.split(" ")[1];
+export const followUser =
+  (io: SocketIOServer) =>
+  async (req: CustomRequest, res: Response): Promise<void> => {
+    const id: string = req.params.id;
+    const currentUserId: any = req.currentUser?.id;
 
-  // if (!token) {
-  //   res.status(401).json("Token not provided");
-  //   return;
-  // }
-
-  let currentUserId: any = req.currentUser?.id;
-
-  // try {
-  //   const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
-  //   currentUserId = decoded.id;
-  // } catch (err) {
-  //   res.status(400).json("Invalid token");
-  //   return;
-  // }
-
-  if (currentUserId === id) {
-    res.status(403).json("Request forbidden");
-    return;
-  }
-
-  try {
-    const followUser = await UserModel.findById(id);
-    const followingUser = await UserModel.findById(currentUserId);
-
-    if (!followUser || !followingUser) {
-      res.status(404).json("User not found");
+    if (currentUserId === id) {
+      res.status(403).json("Request forbidden");
       return;
     }
 
-    followUser.followers = followUser.followers ?? [];
-    followingUser.following = followingUser.following ?? [];
+    try {
+      const followUser = await UserModel.findById(id);
+      const followingUser = await UserModel.findById(currentUserId);
 
-    if (!followUser.followers.includes(currentUserId)) {
-      await followUser.updateOne({ $push: { followers: currentUserId } });
-      await followingUser.updateOne({ $push: { following: id } });
-      res.status(200).json("User Followed");
-    } else {
-      res.status(403).json("User is already being followed");
+      if (!followUser || !followingUser) {
+        res.status(404).json("User not found");
+        return;
+      }
+
+      if (followUser.isPrivate) {
+        const notification = new Notification({
+          userId: followUser._id,
+          type: "follow",
+          content: `${followingUser.username} wants to follow you`,
+          postId: null,
+        });
+        await notification.save();
+        await followUser.updateOne({ $push: { requests: currentUserId } });
+        io.to(followUser._id.toString()).emit("notification", notification);
+        res.status(200).json("Follow request sent");
+      } else {
+        if (!followUser?.followers?.includes(currentUserId)) {
+          await followUser.updateOne({ $push: { followers: currentUserId } });
+          await followingUser.updateOne({ $push: { following: id } });
+          res.status(200).json("User Followed");
+        } else {
+          res.status(403).json("User is already being followed");
+        }
+      }
+    } catch (err) {
+      res.status(500).json(err);
     }
-  } catch (err) {
-    res.status(500).json(err);
-  }
-};
+  };
 
 ////////////////////////////////////////////unfollowUser/////////////////////////////////////////////////////
 
@@ -237,15 +236,8 @@ export const unfollowUser = async (
   req: CustomRequest,
   res: Response
 ): Promise<void> => {
-  // const token = req.headers.authorization?.split(" ")[1];
-
-  // if (!token) {
-  //   res.status(401).json("Token not provided");
-  //   return;
-  // }
   const { id: userId } = req.params;
   try {
-    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
     const currentUserId: any = req.currentUser?.id;
 
     if (currentUserId === userId) {
@@ -273,6 +265,40 @@ export const unfollowUser = async (
     }
   } catch (err) {
     res.status(500).json(err);
+  }
+};
+
+export const cancelRequest = async (
+  req: CustomRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const currentUserId: any = req.currentUser?.id; 
+
+  
+    const user = await UserModel.findById(userId);
+
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    if (!user?.requests?.includes(currentUserId)) {
+      res.status(400).json({ message: "No follow request to cancel" });
+      return;
+    }
+
+    user.requests = user.requests.filter(
+      (id) => id.toString() !== currentUserId
+    );
+
+    await user.save();
+
+    res.status(200).json({ message: "Follow request canceled successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -338,12 +364,6 @@ export const getFollowers = async (req: Request, res: Response) => {
 
 export const blockUser = async (req: CustomRequest, res: Response) => {
   try {
-    // const token = req.headers.authorization?.split(" ")[1];
-    // if (!token) {
-    //   return res.status(401).json({ message: "No token provided" });
-    // }
-
-    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
     const { userId } = req.params;
     const currentUserId: any = req.currentUser?.id;
 
@@ -377,13 +397,7 @@ export const blockUser = async (req: CustomRequest, res: Response) => {
 
 export const unblockUser = async (req: CustomRequest, res: Response) => {
   try {
-    // const token = req.headers.authorization?.split(" ")[1];
-    // if (!token) {
-    //   return res.status(401).json({ message: "No token provided" });
-    // }
-
-    // const decoded = jwt.verify(token, "secretkey123") as DecodedToken;
-    const currentUserId:any = req.currentUser?.id;
+    const currentUserId: any = req.currentUser?.id;
     const { userId } = req.params;
     if (currentUserId === userId) {
       return res.status(403).json({ message: "You cannot unblock yourself" });
