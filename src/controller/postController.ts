@@ -84,6 +84,35 @@ export const getUserPosts = async (
   }
 };
 
+export const getAllPosts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page = 1, limit = 20, startDate, endDate } = req.query;
+
+    const query: any = {};
+
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate as string),
+        $lte: new Date(endDate as string),
+      };
+    }
+
+    const posts: PostDocument[] = await PostModel.find(query)
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .exec();
+
+    res.status(200).json(posts);
+  } catch (err) {
+    console.error("Error fetching posts:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+
+
 export const editPost = async (req: ExtendedRequest, res: Response) => {
   try {
     const postId = req.params.postId;

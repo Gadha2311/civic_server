@@ -5,7 +5,9 @@ export interface IMessage extends Document {
   type: "message" | "request";
   senderId: mongoose.Types.ObjectId;
   content: string;
+  senderName:string;
   imageUrl?: string[];
+  documentUrl: string[]; 
   timeStamp: Date;
   status: boolean;
   readAt: Date;

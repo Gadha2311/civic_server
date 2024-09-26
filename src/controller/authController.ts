@@ -322,3 +322,33 @@ export const getTimelinePost = async (req: CustomRequest, res: Response, next: N
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
+export const getUserRegistrationStats = async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    // Find users registered between startDate and endDate
+    const registrations = await UserModel.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(startDate as string),
+            $lte: new Date(endDate as string),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } }, // Sort by date
+    ]);
+
+    res.json({ data: registrations });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching registration stats" });
+  }
+};

@@ -12,6 +12,10 @@ export const fileparser = async (req: Request, res: Response, next: NextFunction
     if (err) {
       return next(err);
     }
+
+    console.log('Parsed fields:', fields); // Debug: Log parsed fields
+    console.log('Parsed files:', files);
+    
     if (!req.body) req.body = {};
 
     for (let key in fields) {

@@ -24,6 +24,8 @@ const postSchema: Schema<PostDocument> = new Schema(
   { timestamps: true }
 );
 
+postSchema.index({ createdAt: -1 });
+
 const PostModel = mongoose.model<PostDocument>("Post", postSchema);
 export default PostModel;
 

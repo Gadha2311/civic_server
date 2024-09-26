@@ -1,25 +1,29 @@
-
-import mongoose, { Schema, Document } from "mongoose";
-import {IMessage} from "../types/messageInterface"
+import mongoose, { Schema, Document } from 'mongoose';
+import { IMessage } from '../types/messageInterface';
 
 const messageSchema = new Schema<IMessage>({
   chatId: {
     type: Schema.Types.ObjectId,
     required: true,
-    ref: "Chat",
+    ref: 'Chat',
   },
   type: {
     type: String,
     required: true,
-    default: "message",
-    enum: ["message", "request"],
+    default: 'message',
+    enum: ['message', 'request'],
   },
   senderId: {
     type: Schema.Types.ObjectId,
     required: true,
-    ref: "User",
+    ref: 'User',
+  },
+  senderName: {
+    type: String,
+    required: true,
   },
   imageUrl: [{ type: String }],
+  documentUrl: [{ type: String}],
   content: {
     type: String,
     required: function () {
@@ -36,4 +40,5 @@ const messageSchema = new Schema<IMessage>({
   isDeleted: { type: Boolean, required: true, default: false },
 });
 
-export default mongoose.model<IMessage>("Message", messageSchema);
+export default mongoose.model<IMessage>('Message', messageSchema);
+               

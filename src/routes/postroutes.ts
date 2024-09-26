@@ -8,6 +8,7 @@ import {
   likePost,
   addComment,
   deleteImage,
+  getAllPosts,
 } from "../controller/postController";
 import { fileparser } from "../middleware/formidable";
 import { getTimelinePost } from "../controller/authController";
@@ -18,6 +19,9 @@ const router = Router();
 router.post("/createPost", fileparser, createPost);
 
 router.get("/posts/:userId", authenticateToken, getUserPosts);
+
+router.get("/posts", getAllPosts);
+
 
 router.put("/editpost/:postId", fileparser, editPost);
 
