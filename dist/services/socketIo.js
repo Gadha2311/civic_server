@@ -14,7 +14,7 @@ const socket_io_1 = require("socket.io");
 function initializeSocketIO(server) {
     const io = new socket_io_1.Server(server, {
         cors: {
-            origin: "http://localhost:5173",
+            origin: "https://www.thecivic.lol", //http://localhost:5173
             methods: ["GET", "POST"],
         },
     });
