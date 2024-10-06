@@ -11,6 +11,7 @@ import { profile } from "console";
 import PostModel from "../models/postModel";
 import { CustomRequest } from "../middleware/jwtAuth";
 
+
 ////////////////////Signup////////////////////////////
 export const signup = [
   body("username").notEmpty().withMessage("Username is required"),
@@ -59,7 +60,7 @@ export const signup = [
         isVerified: false,
       });
 
-      const verificationLink = `http://localhost:5000/api/auth/verify/${verificationToken}`;
+      const verificationLink = `http://localhost:4000/api/auth/verify/${verificationToken}`;
       sendEmailtoUser(verificationLink, newUser.email);
 
       res.status(201).json({
