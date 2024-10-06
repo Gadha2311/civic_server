@@ -26,7 +26,7 @@ const io = (0, socketIo_1.initializeSocketIO)(server);
 app.use(body_parser_1.default.json({ limit: "10mb" }));
 app.use(body_parser_1.default.urlencoded({ limit: "10mb", extended: true }));
 app.use((0, cors_1.default)({
-    origin: "http://localhost:5173",
+    origin: "https://www.thecivic.lol/",  //http://localhost:5173
 }));
 app.use(express_1.default.json());
 app.use("/api/auth", authroutes_1.default);
