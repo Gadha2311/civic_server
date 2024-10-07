@@ -60,7 +60,7 @@ export const signup = [
         isVerified: false,
       });
 
-      const verificationLink = `http://localhost:4000/api/auth/verify/${verificationToken}`;
+      const verificationLink = `https://civic-server.onrender.com/api/auth/verify/${verificationToken}`;
       sendEmailtoUser(verificationLink, newUser.email);
 
       res.status(201).json({
