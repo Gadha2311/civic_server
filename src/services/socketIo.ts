@@ -5,7 +5,7 @@ import Message from "../models/messageModel"
 export function initializeSocketIO(server: HttpServer) {
   const io = new SocketIOServer(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: "https://www.thecivic.lol", //http://localhost:5173
       methods: ["GET", "POST"],
     },
   });
