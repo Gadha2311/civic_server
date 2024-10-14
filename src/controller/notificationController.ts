@@ -1,12 +1,9 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import Notification from "../models/notificationModel";
-import { CustomRequest } from "../middleware/jwtAuth";
+import { CustomRequest } from "../types/userInterfaces";
 import { UserModel } from "../models/userModel";
 
-interface DecodedToken {
-  id: string;
-}
 
 export const getNotifications = async (req: CustomRequest, res: Response) => {
   try {

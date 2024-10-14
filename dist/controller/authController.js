@@ -22,6 +22,8 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const sendmail_1 = require("../utils/sendmail");
 const forgotmail_1 = require("../utils/forgotmail");
 const postModel_1 = __importDefault(require("../models/postModel"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 ////////////////////Signup////////////////////////////
 exports.signup = [
     (0, express_validator_1.body)("username").notEmpty().withMessage("Username is required"),
@@ -59,7 +61,7 @@ exports.signup = [
             const verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
             const newUser = yield userModel_1.UserModel.create(Object.assign(Object.assign({}, req.body), { password: hashedPassword, verificationToken,
                 verificationTokenExpires, isVerified: false }));
-            const verificationLink = `http://localhost:4000/api/auth/verify/${verificationToken}`;
+            const verificationLink = `${process.env.EMAILVARIFICATIONLINK}${verificationToken}`;
             (0, sendmail_1.sendEmailtoUser)(verificationLink, newUser.email);
             res.status(201).json({
                 status: "success",
@@ -90,7 +92,7 @@ const verifyEmail = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
         user.verificationToken = undefined;
         user.verificationTokenExpires = undefined;
         yield user.save();
-        res.redirect("http://localhost:5173/login?verified=true");
+        res.redirect(`${process.env.FRONTEND_URL}/login?verified=true`);
     }
     catch (error) {
         next(error);

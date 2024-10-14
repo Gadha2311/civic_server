@@ -1,30 +1,37 @@
-import { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import { NextFunction, Response } from "express";
+import jwt from "jsonwebtoken";
+import { UserModel } from "../models/userModel";
 
-interface DecodedToken {
-  id: string;
-}
+import dotenv from "dotenv";
+dotenv.config();
+import { DecodedToken, CustomRequest } from "../types/userInterfaces";
 
-export interface CustomRequest extends Request {
-  currentUser?: { id: string };
-}
+const secretKey: any = process.env.JWT_SECRETKEY;
 
-const secretKey = 'secretkey123';
-
-export const authenticateToken = async (req: CustomRequest, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization
-  
+export const authenticateToken = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const token = req.headers.authorization;
 
   if (!token) {
-    return res.status(401).json('Token not provided');
+    return res.status(401).json("Token not provided");
   }
 
-  
   try {
     const decoded = jwt.verify(token, secretKey) as DecodedToken;
     req.currentUser = { id: decoded.id };
-    next();
+    const user = await UserModel.findById(decoded.id);
+    if (user?.blocked == false) {
+      next();
+    } else {
+      console.log("hey you are blocked");
+      return res
+        .status(403)
+        .json({ error: "User is blocked. Please log out." });
+    }
   } catch (err) {
-    return res.status(400).json('Invalid token');
+    return res.status(400).json("Invalid token");
   }
 };

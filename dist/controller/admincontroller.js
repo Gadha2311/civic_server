@@ -18,13 +18,7 @@ const reportModel_1 = __importDefault(require("../models/reportModel"));
 const postModel_1 = __importDefault(require("../models/postModel"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const getAllUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
-        const token = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(" ")[1];
-        if (!token) {
-            res.status(401).json({ message: "Unauthorized" });
-            return;
-        }
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 6;
         const skip = (page - 1) * limit;
@@ -48,7 +42,6 @@ const getAllUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 exports.getAllUser = getAllUser;
 const blockuser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log(req.params);
         yield userModel_1.UserModel.findByIdAndUpdate(req.params.id, {
             $set: { blocked: true },
         }).exec();

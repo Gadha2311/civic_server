@@ -5,10 +5,10 @@ import jwt from "jsonwebtoken";
 import { UserModel } from "../models/userModel";
 import formidable from "formidable";
 import fs from "fs";
-import { CustomRequest } from "../middleware/jwtAuth";
+import { CustomRequest } from "../types/userInterfaces";
 import Notification from "../models/notificationModel";
 import { Server as SocketIOServer } from "socket.io";
-import PostModel,{PostDocument} from "../models/postModel";
+import PostModel, { PostDocument } from "../models/postModel";
 
 interface ExtendedRequest extends Request {
   files?: {
@@ -80,7 +80,6 @@ export const updateProfileDetails = async (
   res: Response
 ) => {
   try {
-  
     const userId = req.currentUser?.id;
 
     const { name, bio } = req.body;
@@ -135,13 +134,19 @@ export const status = async (req: CustomRequest, res: Response) => {
 
 ////////////////////////////////////////////search/////////////////////////////////////////////////////
 
-export const search = async (req: Request, res: Response) => {
+export const search = async (req: CustomRequest, res: Response) => {
   try {
     const searchTerm = req.params.searchTerm.toLowerCase();
+    const currentUserId = req.currentUser?.id;
     const results = await UserModel.find(
-      { username: new RegExp(searchTerm, "i") },
+      {
+        username: new RegExp(searchTerm, "i"),
+        _id: { $ne: currentUserId },
+        isAdmin: { $ne: true },
+      },
       "username _id email profilePicture isPrivate"
     );
+
     res.json(results);
   } catch (error) {
     console.error(error);
@@ -154,7 +159,7 @@ export const search = async (req: Request, res: Response) => {
 export const getUserProfile = async (req: CustomRequest, res: Response) => {
   try {
     const { userId } = req.params;
-    const currentUserId:any = req.currentUser?.id;
+    const currentUserId: any = req.currentUser?.id;
 
     const user = await UserModel.findById(userId).select(
       "username email profilePicture isPrivate bio followers following blockedMe"
@@ -164,16 +169,14 @@ export const getUserProfile = async (req: CustomRequest, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
     console.log(user.followers);
-    
-   
-    let posts:PostDocument[] = [];
+
+    let posts: PostDocument[] = [];
     if (
       !user.isPrivate ||
-      (user.isPrivate &&  user.followers?.includes(currentUserId))
+      (user.isPrivate && user.followers?.includes(currentUserId))
     ) {
-      posts = await PostModel.find({ userId:userId, blocked:false}).exec()
+      posts = await PostModel.find({ userId: userId, blocked: false }).exec();
       console.log(posts);
-      
     }
 
     res.status(200).json({ user, posts });
@@ -268,15 +271,16 @@ export const unfollowUser = async (
   }
 };
 
+
+
 export const cancelRequest = async (
   req: CustomRequest,
   res: Response
 ): Promise<void> => {
   try {
     const { userId } = req.params;
-    const currentUserId: any = req.currentUser?.id; 
+    const currentUserId: any = req.currentUser?.id;
 
-  
     const user = await UserModel.findById(userId);
 
     if (!user) {
@@ -302,7 +306,9 @@ export const cancelRequest = async (
   }
 };
 
+
 ///////////////////////////////////////////getFollowing///////////////////////////////////////////////
+
 export const getFollowing = async (req: Request, res: Response) => {
   try {
     const user = await UserModel.findById(req.params.id);
@@ -333,6 +339,7 @@ export const getFollowing = async (req: Request, res: Response) => {
 };
 
 ///////////////////////////////////////////getFollowers///////////////////////////////////////////////
+
 export const getFollowers = async (req: Request, res: Response) => {
   try {
     const user = await UserModel.findById(req.params.id);
@@ -393,7 +400,7 @@ export const blockUser = async (req: CustomRequest, res: Response) => {
   }
 };
 
-// ////////////////////////////////////////////unblockUser/////////////////////////////////////////////////////
+///////////////////////////////////////////////unblockUser///////////////////////////////////////////////////////
 
 export const unblockUser = async (req: CustomRequest, res: Response) => {
   try {

@@ -1,5 +1,6 @@
-
+import { Request } from "express";
 import { Document } from "mongoose";
+
 
 
 export interface Comment {
@@ -19,4 +20,8 @@ export interface PostDocument extends Document {
   comments?: Comment[];
   createdAt: Date;
   blocked:boolean
+}
+
+export interface ExtendedRequest extends Request {
+  files: any;
 }

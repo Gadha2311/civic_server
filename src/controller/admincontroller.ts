@@ -9,12 +9,6 @@ export const getAllUser = async (
   res: Response
 ): Promise<void> => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
-    
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 6;
     const skip = (page - 1) * limit;
@@ -43,8 +37,6 @@ export const getAllUser = async (
 
 export const blockuser = async (req: Request, res: Response): Promise<void> => {
   try {
-    
-    console.log(req.params);
     await UserModel.findByIdAndUpdate(req.params.id, {
       $set: { blocked: true },
     }).exec();

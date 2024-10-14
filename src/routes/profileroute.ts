@@ -22,7 +22,7 @@ const router = Router();
 router.post("/uploadProfilePicture", fileparser, uploadProfilePicture);
 router.put("/updateProfileDetails",authenticateToken, updateProfileDetails);
 router.patch("/updatestatus",authenticateToken,status);
-router.get("/search/:searchTerm", search);
+router.get("/search/:searchTerm",authenticateToken, search);
 router.get('/users/:userId',authenticateToken, getUserProfile);
 router.put('/follow/:id',authenticateToken,(req, res) => {
   if (req.io) {

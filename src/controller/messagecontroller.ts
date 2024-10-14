@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { UserModel } from "../models/userModel";
-import { CustomRequest } from "../middleware/jwtAuth";
+import { CustomRequest } from "../types/userInterfaces";
+import { IUser } from "../types/userInterfaces";
 import Message from "../models/messageModel";
 import Chat from "../models/chatModel";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cloudinary from "cloudinary";
 dotenv.config();
@@ -13,11 +13,6 @@ cloudinary.v2.config({
   api_key: process.env.CLOUD_APIKEY,
   api_secret: process.env.CLOUD_APISECRET,
 });
-interface IUser {
-  _id: mongoose.Types.ObjectId;
-  username: string;
-  profilePicture: string;
-}
 
 export const searchChat = async (req: CustomRequest, res: Response) => {
   try {
@@ -169,7 +164,7 @@ export const sendMessage = async (req: Request, res: Response) => {
             const result = await cloudinary.v2.uploader.upload(doc.filepath, {
               resource_type: "raw", // Specify raw file type for non-image files
             });
-            console.log( result);
+            console.log(result);
             documentUrl = result.secure_url;
             return result.secure_url;
           })
@@ -207,24 +202,20 @@ export const createOrGetChat = async (req: CustomRequest, res: Response) => {
     console.log(selectedUserId);
 
     const userId = req.currentUser?.id;
-    const chatData: any = await Chat.findOne({ _id: selectedUserId }); 
+    const chatData: any = await Chat.findOne({ _id: selectedUserId });
 
     console.log(`chatData: ${chatData}`);
 
-    
     if (chatData?.groupName) {
-   
       return res.status(200).json({ _id: chatData._id });
     }
 
-  
     let chat = await Chat.findOne({
       participants: { $all: [userId, selectedUserId] },
     });
 
     console.log(chat);
 
-    
     if (!chat) {
       chat = new Chat({
         participants: [userId, selectedUserId],
@@ -239,7 +230,7 @@ export const createOrGetChat = async (req: CustomRequest, res: Response) => {
       await chat.save();
     } else {
       const latestMessage: any = await Message.findOne({
-        chatId: chat._id, 
+        chatId: chat._id,
       })
         .sort({ timeStamp: -1 })
         .select("_id");
@@ -256,7 +247,6 @@ export const createOrGetChat = async (req: CustomRequest, res: Response) => {
     res.status(500).json({ error: "Failed to create or get chat" });
   }
 };
-
 
 export const getMessagesByChatId = async (req: Request, res: Response) => {
   const { chatId } = req.params;

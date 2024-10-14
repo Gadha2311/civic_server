@@ -1,11 +1,14 @@
 import { Server as SocketIOServer } from "socket.io";
 import { Server as HttpServer } from "http";
 import Message from "../models/messageModel"
+import dotenv from "dotenv";
+
+dotenv.config()
 
 export function initializeSocketIO(server: HttpServer) {
   const io = new SocketIOServer(server, {
     cors: {
-      origin: "https://www.thecivic.lol", //http://localhost:5173
+      origin: process.env.FRONTEND_URL,
       methods: ["GET", "POST"],
     },
   });

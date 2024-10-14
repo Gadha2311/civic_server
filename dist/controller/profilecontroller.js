@@ -100,9 +100,15 @@ const status = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.status = status;
 ////////////////////////////////////////////search/////////////////////////////////////////////////////
 const search = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const searchTerm = req.params.searchTerm.toLowerCase();
-        const results = yield userModel_1.UserModel.find({ username: new RegExp(searchTerm, "i") }, "username _id email profilePicture isPrivate");
+        const currentUserId = (_a = req.currentUser) === null || _a === void 0 ? void 0 : _a.id;
+        const results = yield userModel_1.UserModel.find({
+            username: new RegExp(searchTerm, "i"),
+            _id: { $ne: currentUserId },
+            isAdmin: { $ne: true },
+        }, "username _id email profilePicture isPrivate");
         res.json(results);
     }
     catch (error) {
@@ -311,7 +317,7 @@ const blockUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.blockUser = blockUser;
-// ////////////////////////////////////////////unblockUser/////////////////////////////////////////////////////
+///////////////////////////////////////////////unblockUser///////////////////////////////////////////////////////
 const unblockUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     try {

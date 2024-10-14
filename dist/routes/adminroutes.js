@@ -5,8 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const admincontroller_1 = require("../controller/admincontroller");
+const jwtAuth_1 = require("../middleware/jwtAuth");
 const router = express_1.default.Router();
-router.get("/userlist", admincontroller_1.getAllUser);
+router.get("/userlist", jwtAuth_1.authenticateToken, admincontroller_1.getAllUser);
 router.put("/block/:id", admincontroller_1.blockuser);
 router.put("/unblock/:id", admincontroller_1.unblockuser);
 router.delete("/deleteuser/:id", admincontroller_1.deleteuser);

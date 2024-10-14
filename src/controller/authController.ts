@@ -7,9 +7,10 @@ import createError from "http-errors";
 import jwt from "jsonwebtoken";
 import { sendEmailtoUser } from "../utils/sendmail";
 import { sendForgotPasswordEmail } from "../utils/forgotmail";
-import { profile } from "console";
 import PostModel from "../models/postModel";
-import { CustomRequest } from "../middleware/jwtAuth";
+import { CustomRequest } from "../types/userInterfaces";
+import dotenv from "dotenv";
+dotenv.config()
 
 
 ////////////////////Signup////////////////////////////
@@ -60,7 +61,8 @@ export const signup = [
         isVerified: false,
       });
 
-      const verificationLink = `https://civic-server.onrender.com/api/auth/verify/${verificationToken}`;
+      const verificationLink = `${process.env.EMAILVARIFICATIONLINK}${verificationToken}`;
+
       sendEmailtoUser(verificationLink, newUser.email);
 
       res.status(201).json({
@@ -101,7 +103,7 @@ export const verifyEmail = async (
     user.verificationToken = undefined;
     user.verificationTokenExpires = undefined;
     await user.save();
-    res.redirect("http://localhost:5173/login?verified=true");
+    res.redirect(`${process.env.FRONTEND_URL}/login?verified=true`);
   } catch (error) {
     next(error);
   }

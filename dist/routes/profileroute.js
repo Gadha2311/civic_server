@@ -8,7 +8,7 @@ const router = (0, express_1.Router)();
 router.post("/uploadProfilePicture", formidable_1.fileparser, profilecontroller_1.uploadProfilePicture);
 router.put("/updateProfileDetails", jwtAuth_1.authenticateToken, profilecontroller_1.updateProfileDetails);
 router.patch("/updatestatus", jwtAuth_1.authenticateToken, profilecontroller_1.status);
-router.get("/search/:searchTerm", profilecontroller_1.search);
+router.get("/search/:searchTerm", jwtAuth_1.authenticateToken, profilecontroller_1.search);
 router.get('/users/:userId', jwtAuth_1.authenticateToken, profilecontroller_1.getUserProfile);
 router.put('/follow/:id', jwtAuth_1.authenticateToken, (req, res) => {
     if (req.io) {

@@ -14,13 +14,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fileparser = void 0;
 const formidable_1 = __importDefault(require("formidable"));
+// interface ExtendedRequest extends Request {
+//   files: any;
+// }
 const fileparser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const form = (0, formidable_1.default)();
     form.parse(req, (err, fields, files) => {
         if (err) {
             return next(err);
         }
-        console.log('Parsed fields:', fields); // Debug: Log parsed fields
+        console.log('Parsed fields:', fields);
         console.log('Parsed files:', files);
         if (!req.body)
             req.body = {};

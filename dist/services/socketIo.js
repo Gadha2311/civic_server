@@ -8,13 +8,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.initializeSocketIO = initializeSocketIO;
 const socket_io_1 = require("socket.io");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 function initializeSocketIO(server) {
     const io = new socket_io_1.Server(server, {
         cors: {
-            origin: "https://www.thecivic.lol", //http://localhost:5173
+            origin: process.env.FRONTEND_URL,
             methods: ["GET", "POST"],
         },
     });

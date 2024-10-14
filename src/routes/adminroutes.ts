@@ -10,11 +10,13 @@ import {
   blockPost,
   unblockPost
 } from "../controller/admincontroller";
+import { authenticateToken } from "../middleware/jwtAuth";
+
 
 
 const router = express.Router();
 
-router.get("/userlist", getAllUser);
+router.get("/userlist", authenticateToken, getAllUser);
 router.put("/block/:id", blockuser);
 router.put("/unblock/:id", unblockuser);
 router.delete("/deleteuser/:id", deleteuser);

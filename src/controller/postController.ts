@@ -7,8 +7,9 @@ import PostModel, { PostDocument } from "../models/postModel";
 import { UserModel } from "../models/userModel";
 import Report, { IReport } from "../models/reportModel";
 import Notification from "../models/notificationModel";
-import { CustomRequest } from "../middleware/jwtAuth";
+import { CustomRequest } from "../types/userInterfaces";
 import { Server as SocketIOServer } from "socket.io";
+import {DecodedToken  } from "../types/userInterfaces";
 
 dotenv.config();
 
@@ -18,9 +19,6 @@ cloudinary.v2.config({
   api_secret: process.env.CLOUD_APISECRET,
 });
 
-interface DecodedToken {
-  id: string;
-}
 
 interface ExtendedRequest extends Request {
   files?: any;

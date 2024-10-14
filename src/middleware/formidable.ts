@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import formidable, { Fields, Files, IncomingForm } from 'formidable';
+import formidable, { Fields, Files } from 'formidable';
+import { ExtendedRequest } from "../types/postInterfaces";
 
-interface ExtendedRequest extends Request {
-  files: any;
-}
+// interface ExtendedRequest extends Request {
+//   files: any;
+// }
 
 export const fileparser = async (req: Request, res: Response, next: NextFunction) => {
   const form = formidable();
@@ -13,7 +14,7 @@ export const fileparser = async (req: Request, res: Response, next: NextFunction
       return next(err);
     }
 
-    console.log('Parsed fields:', fields); // Debug: Log parsed fields
+    console.log('Parsed fields:', fields); 
     console.log('Parsed files:', files);
     
     if (!req.body) req.body = {};
