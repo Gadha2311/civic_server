@@ -152,7 +152,7 @@ const forgotPassword = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         user.resetPasswordToken = token;
         user.resetPasswordExpires = new Date(Date.now() + 3600000);
         yield user.save();
-        const resetLink = `http://localhost:5173/reset-password/${token}`;
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
         (0, forgotmail_1.sendForgotPasswordEmail)(user.email, resetLink);
         res.status(200).send("Recovery email sent");
     }
