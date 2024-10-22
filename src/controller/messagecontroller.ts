@@ -137,6 +137,7 @@ export const sendMessage = async (req: Request, res: Response) => {
   const senderId = req.body.senderId;
   const image = (req as any).files?.image;
   const document = (req as any).files?.document;
+  const chat: any = await Chat.findById(chatId);
 
   try {
     let imageUrl: any = "";
@@ -154,15 +155,15 @@ export const sendMessage = async (req: Request, res: Response) => {
         imageUrl = result.secure_url;
       }
     }
-    // Handle document upload
+
     if (document) {
-      console.log("Document file to upload:", document); // Debug: Log document file details
+      console.log("Document file to upload:", document);
 
       if (Array.isArray(document)) {
         documentUrl = await Promise.all(
           document.map(async (doc: any) => {
             const result = await cloudinary.v2.uploader.upload(doc.filepath, {
-              resource_type: "raw", // Specify raw file type for non-image files
+              resource_type: "raw",
             });
             console.log(result);
             documentUrl = result.secure_url;
@@ -187,8 +188,11 @@ export const sendMessage = async (req: Request, res: Response) => {
       status: false,
       isDeleted: false,
     });
-
     await newMessage.save();
+    if (newMessage) {
+      chat.lastMessage.messageId = newMessage._id;
+    }
+    await chat.save();
     res.status(201).json(newMessage);
   } catch (error) {
     console.error("Error sending message:", error);
@@ -248,17 +252,23 @@ export const createOrGetChat = async (req: CustomRequest, res: Response) => {
   }
 };
 
-export const getMessagesByChatId = async (req: Request, res: Response) => {
+export const getMessagesByChatId = async (req: CustomRequest, res: Response) => {
   const { chatId } = req.params;
   console.log(`chatID ${chatId}`);
-
+  const CurrentuserId = req.currentUser?.id;
   try {
     const messages = await Message.find({ chatId }).sort({ timeStamp: 1 });
-    console.log(messages);
-
     if (!messages) {
       return res.status(404).json({ message: "Messages not found" });
     }
+    await Promise.all(
+      messages.map(async (msg) => {
+        if (msg.senderId.toString() !== CurrentuserId && !msg.ReadStatus) {
+          msg.ReadStatus = true;
+          await msg.save(); 
+        }
+      })
+    );
 
     res.status(200).json(messages);
   } catch (error) {
@@ -273,21 +283,27 @@ export const chats = async (req: CustomRequest, res: Response) => {
 
     const chats = await Chat.find({
       participants: currentUserId,
-    }).populate("participants", "_id username profilePicture", "users");
-
+    })
+      .populate("lastMessage.messageId", "senderName timeStamp", "Message")
+      .populate("participants", "_id username profilePicture", "users");
     const users = chats
       .map((chat) => {
+        const lastMessage = chat.lastMessage?.messageId || null;
         if (chat.groupName) {
           return chat;
         } else {
           const participants = chat.participants as unknown as IUser[];
-          return participants.find(
+          const otherUser = participants.find(
             (participant) => participant._id.toString() !== currentUserId
           );
+          return {
+            ...otherUser?.toObject(),
+            chatId: chat._id,
+            lastMessage,
+          };
         }
       })
       .filter(Boolean);
-
     res.json(users);
   } catch (error) {
     console.error("Error fetching user chats:", error);

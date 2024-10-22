@@ -49,12 +49,20 @@ export function initializeSocketIO(server: HttpServer) {
      socket.on("JoinRoom",(chatId)=>{
       socket.join(chatId)
       console.log("joined chat room");
-      
+     })
+
+     socket.on("typing", async(chatId)=>{
+      socket.to(chatId).emit("receivetyping")
+     })
+
+     socket.on("stopTyping",async(chatId)=>{
+      socket.to(chatId).emit("receiveStopTyping")
      })
 
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.id}`);
     });
+    
   });
 
   return io;

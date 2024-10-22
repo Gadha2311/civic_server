@@ -35,9 +35,7 @@ const messageSchema = new Schema<IMessage>({
     required: true,
     default: () => new Date().getTime(),
   },
-  status: { type: Boolean, required: true, default: false },
-  readAt: { type: Date },
-  isDeleted: { type: Boolean, required: true, default: false },
+  ReadStatus: { type: Boolean, required: true, default: false },
 });
 
 export default mongoose.model<IMessage>('Message', messageSchema);

@@ -9,8 +9,5 @@ export interface IMessage extends Document {
   imageUrl?: string[];
   documentUrl: string[]; 
   timeStamp: Date;
-  status: boolean;
-  readAt: Date;
-  isDeleted: boolean;
-  
+  ReadStatus: boolean;  
 }
