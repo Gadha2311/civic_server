@@ -14,6 +14,7 @@ export const authenticateToken = async (
   next: NextFunction
 ) => {
   const token = req.headers.authorization;
+console.log(token);
 
   if (!token) {
     return res.status(401).json("Token not provided");

@@ -252,7 +252,10 @@ export const createOrGetChat = async (req: CustomRequest, res: Response) => {
   }
 };
 
-export const getMessagesByChatId = async (req: CustomRequest, res: Response) => {
+export const getMessagesByChatId = async (
+  req: CustomRequest,
+  res: Response
+) => {
   const { chatId } = req.params;
   console.log(`chatID ${chatId}`);
   const CurrentuserId = req.currentUser?.id;
@@ -265,7 +268,7 @@ export const getMessagesByChatId = async (req: CustomRequest, res: Response) => 
       messages.map(async (msg) => {
         if (msg.senderId.toString() !== CurrentuserId && !msg.ReadStatus) {
           msg.ReadStatus = true;
-          await msg.save(); 
+          await msg.save();
         }
       })
     );
@@ -280,7 +283,8 @@ export const getMessagesByChatId = async (req: CustomRequest, res: Response) => 
 export const chats = async (req: CustomRequest, res: Response) => {
   try {
     const currentUserId = req.currentUser?.id;
-
+    console.log(`currentUserId ${currentUserId}`);
+    
     const chats = await Chat.find({
       participants: currentUserId,
     })
