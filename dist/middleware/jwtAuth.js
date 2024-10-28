@@ -20,6 +20,7 @@ dotenv_1.default.config();
 const secretKey = process.env.JWT_SECRETKEY;
 const authenticateToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization;
+    console.log(token);
     if (!token) {
         return res.status(401).json("Token not provided");
     }

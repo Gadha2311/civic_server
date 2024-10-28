@@ -33,7 +33,7 @@ function initializeSocketIO(server) {
         socket.on("liked post", (notification) => {
             if (notification) {
                 socket.to(notification.userId).emit("newLike", notification);
-                console.log('socket send from backend');
+                console.log("socket send from backend");
             }
         });
         socket.on("comment", (notification) => {
@@ -55,6 +55,12 @@ function initializeSocketIO(server) {
             socket.join(chatId);
             console.log("joined chat room");
         });
+        socket.on("typing", (chatId) => __awaiter(this, void 0, void 0, function* () {
+            socket.to(chatId).emit("receivetyping");
+        }));
+        socket.on("stopTyping", (chatId) => __awaiter(this, void 0, void 0, function* () {
+            socket.to(chatId).emit("receiveStopTyping");
+        }));
         socket.on("disconnect", () => {
             console.log(`User disconnected: ${socket.id}`);
         });
